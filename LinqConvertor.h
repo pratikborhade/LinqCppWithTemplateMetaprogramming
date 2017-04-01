@@ -9,7 +9,7 @@ class IEnumerable<T, Iterator, Type::Container>
 	Iterator current;
 	Iterator last;
 public:
-	IEnumerable(Iterator &ite, Iterator &last) : last(last), current(ite)
+	IEnumerable(Iterator ite, Iterator last) : last(last), current(ite)
 	{
 	}
 
@@ -36,7 +36,7 @@ public:
 	DefineTake(T, Iterator, current, last);
 	DefineTakeWhile(T, Iterator, current, last);
 
-	DefineSkipMethods(T, Iterator, current, last);
+	DefineSkipMethods(T, Iterator, *this);
 
 	DefineSelect(T, Iterator, current, last);
 	DefineSum(T, Iterator, current, last)

@@ -19,8 +19,7 @@ struct NullType
 template<
 	typename T,
 	typename Iterator,
-	Type type,
-	typename Q = NullType //optional
+	Type type
 >
 class IEnumerable
 {
@@ -39,24 +38,24 @@ public:
 
 	static auto TakeWhile(Iterator begin, Iterator last, std::function< bool(const T&) > functor);
 
-	static auto SkipWhile(Iterator begin, Iterator last, std::function< bool(const T&) > functor)
+	static auto SkipWhile(auto begin, std::function< bool(const T&) > functor)
 	{
-		Iterator ite = begin;
-		while (ite != last && functor(*ite))
-			++ite;
-		return ite;
+		auto end = begin.end();
+		while (begin != end && functor(*begin))
+			++begin;
+		return begin;
 	}
 
-	static auto Skip(Iterator begin, Iterator last, const size_t limit)
+	static auto Skip(auto begin, const size_t limit)
 	{
-		Iterator ite = begin();
+		auto end = begin.end();
 		auto l = limit;
-		while (ite != last && l > 1)
+		while (begin != end && l > 1)
 		{
 			--l;
-			++ite;
+			++begin;
 		}
-		return ite;
+		return begin;
 	}
 
 	static T Sum(Iterator begin, Iterator last)
@@ -90,14 +89,14 @@ auto TakeWhile( std::function< bool(const T&) > functor ) \
 	return IEnumerable<T, Iterator, Type::None>::TakeWhile(begin, last, functor);\
 }
 
-#define DefineSkipMethods( T, Iterator, begin, last )\
+#define DefineSkipMethods( T, Iterator, begin )\
 auto Skip( size_t limit ) \
 { \
-	return IEnumerable<T, Iterator, Type::None>::Skip(begin, last, limit);\
+	return IEnumerable<T, Iterator, Type::None>::Skip(begin, limit);\
 }\
 auto SkipWhile( std::function< bool(const T&) > functor ) \
 { \
-	return IEnumerable<T, Iterator, Type::None>::SkipWhile(begin, last, functor);\
+	return IEnumerable<T, Iterator, Type::None>::SkipWhile(begin, functor);\
 }
 
 #define DefineBegin()\
@@ -112,7 +111,7 @@ template<typename EqualClass> bool operator!=( const EqualClass &other ){ return
 template<typename Q> \
 auto Select(std::function<Q(const T&)> functor)\
 {\
-	return IEnumerable<T, Iterator, Type::None>::Select<Q>( begin, last, functor );\
+	return IEnumerable<T, Iterator, Type::None>::template Select<Q>( begin, last, functor );\
 }
 
 #define DefineSum( T, Iterator, begin, last )\

@@ -2,18 +2,18 @@
 
 template<
 	typename T,
-	typename Iterator,
-	typename Inp
+	typename Iterator
 >
-class IEnumerable<T, Iterator, Type::Select, Inp>
+class IEnumerable<T, Iterator, Type::Select>
 {
-	using Functor = std::function<T(const Inp&)>;
+	using Functor = std::function<T(const typename Iterator::value_type&)>;
 public:
 	struct SelectIterator
 	{
 		Iterator ite;
 		Iterator last;
 		Functor functor;
+		typedef typename Iterator::value_type value_type;
 
 		SelectIterator() = default;
 
@@ -85,7 +85,7 @@ public:
 	DefineTake(T, SelectIterator, current, current.end());
 	DefineTakeWhile(T, SelectIterator, current, current.end());
 
-	DefineSkipMethods(T, SelectIterator, current, current.end());
+	DefineSkipMethods(T, SelectIterator, *this);
 
 	DefineSelect(T, SelectIterator, current, current.end());
 	DefineSum(T, SelectIterator, current, current.end())
@@ -98,6 +98,6 @@ template<
 template<typename Q>
 auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, std::function<Q(const T&)> func)
 {
-	return IEnumerable<Q, Iterator, Type::Select, T>(begin, last, func);
+	return IEnumerable<Q, Iterator, Type::Select>(begin, last, func);
 }
 

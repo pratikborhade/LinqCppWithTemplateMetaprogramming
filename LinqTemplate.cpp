@@ -24,6 +24,7 @@ void assertEquals(T1 t1, T2 t2)
 		ss << "Assertion failed: ";
 		ss << "Expected:" << t1;
 		ss << ", Got:" << t2;
+		std::cout << ss.str();
 		throw std::runtime_error(ss.str());
 	}
 }
@@ -50,6 +51,7 @@ auto test(const std::string& name, F f, double showDuration = 0.5, std::ostream&
 	{
 		auto result = time<std::micro>(f);
 		long duration = static_cast<long>(result.first);
+
 
 		os << "[" << duration << " us] ";
 		os << "-> Success" << std::endl;
@@ -98,7 +100,7 @@ void bench()
 	auto x2 = test("take-enumerable", [&]() {
 		return enumarable
 			.Take(10000)
-			.Select<int>([](const auto& x) { return x.map[0]; })
+			.template Select<int>([](const auto& x) { return x.map[0]; })
 			.Sum();
 	});
 
@@ -113,9 +115,10 @@ void bench()
 		return sum;
 	});
 
+
 	x2 = test("where-enumerable", [&]() {
 		return enumarable
-			.Select<int>([](const auto& x) { return x.map[0]; })
+			.template Select<int>([](const auto& x) { return x.map[0]; })
 			.Where([](const auto& x) { return x > 5; })
 			.Sum();
 	});
@@ -139,7 +142,7 @@ void bench()
 		return enumarable
 			.Where([](const auto& x) { return x.map[0] > 5; })
 			.Take(1)
-			.Select<int>([](const auto& x) { return x.map[0]; })
+			.template Select<int>([](const auto& x) { return x.map[0]; })
 			.Sum();
 	});
 
@@ -161,15 +164,15 @@ void bench()
 		}
 		return sum;
 	});
-	/*
+	
 	x2 = test("skip-while-take-while-enumerable", [&]() {
 		return enumarable
 			.SkipWhile([](const auto& x) { return x.map[0] < 5; })
 			.TakeWhile([](const auto& x) { return x.map[0] >= 5; })
-			.Select<int>([](const auto& x) { return x.map[0]; })
+			.template Select<int>([](const auto& x) { return x.map[0]; })
 			.Sum();
 	});
-	*/
+	
 	assertEquals(x1, x2);
 }
 

@@ -22,6 +22,9 @@ class IEnumerable<T, Iterator, Type::Take>
 		size_t limit;
 		TakeType type;
 
+
+		typedef typename Iterator::value_type value_type;
+
 		TakeIterator() = default;
 
 		TakeIterator(Iterator &ite, Iterator &last, Functor &func) : ite(ite), last(last), functor(func), type(TakeType::Function), limit(0)
@@ -48,7 +51,7 @@ class IEnumerable<T, Iterator, Type::Take>
 				break;
 			case TakeType::Limit:
 				--limit;
-				if (limit <= 1)
+				if (limit == 0)
 					ite = last;
 			default:
 				break;
@@ -120,7 +123,7 @@ public:
 	DefineTakeWhile(T, TakeIterator, current, current.end());
 
 
-	DefineSkipMethods(T, TakeIterator, current, current.end());
+	DefineSkipMethods(T, TakeIterator, *this);
 
 	DefineSelect(T, TakeIterator, current, current.end());
 	DefineSum(T, TakeIterator, current, current.end())

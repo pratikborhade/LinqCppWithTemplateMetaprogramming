@@ -13,6 +13,8 @@ public:
 		Iterator ite;
 		Iterator last;
 		Functor functor;
+		
+		typedef typename Iterator::value_type value_type;
 
 		WhereIterator() = default;
 
@@ -88,7 +90,7 @@ public:
 	DefineTake(T, WhereIterator, current, current.end());
 	DefineTakeWhile( T, WhereIterator, current, current.end() );
 
-	DefineSkipMethods(T, WhereIterator, current, current.end());
+	DefineSkipMethods(T, WhereIterator, *this);
 
 	DefineSelect(T, WhereIterator, current, current.end());
 	DefineSum(T, WhereIterator, current, current.end())
