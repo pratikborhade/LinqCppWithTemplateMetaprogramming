@@ -17,7 +17,7 @@ public:
 
 		SelectIterator() = default;
 
-		SelectIterator(Iterator &ite, Iterator &last, Functor &func) : ite(ite), last(last), functor(func)
+		SelectIterator(Iterator &ite, Iterator &last, Functor func) : ite(ite), last(last), functor(func)
 		{
 		}
 
@@ -56,7 +56,7 @@ private:
 	Functor functor;
 public:
 
-	IEnumerable(Iterator &ite, Iterator &last, Functor &func) :
+	IEnumerable(Iterator &ite, Iterator &last, Functor func) :
 		functor(func),
 		current(ite, last, func)
 	{
@@ -99,5 +99,20 @@ template<typename Q>
 auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, std::function<Q(const T&)> func)
 {
 	return IEnumerable<Q, Iterator, Type::Select>(begin, last, func);
+}
+
+
+template<
+	typename T,
+	typename Iterator
+>
+template <typename Q, typename E>
+auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, Q E::* field)
+{
+	return IEnumerable<Q, Iterator, Type::Select>(begin, last, 
+		[field](const E& val)->Q 
+		{
+			return val.*field;
+		});
 }
 

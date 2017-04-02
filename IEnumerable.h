@@ -16,6 +16,24 @@ enum Type
 struct NullType
 {};
 
+template<bool, typename T>
+struct CustomEnableIf
+{};
+
+
+template<typename T>
+struct CustomEnableIf<true, T>
+{
+	typedef T type;
+};
+
+
+template<typename T>
+struct CustomEnableIf<false, T>
+{
+	typedef NullType type;	
+};
+
 template<
 	typename T,
 	typename Iterator,
@@ -69,6 +87,11 @@ public:
 
 	template <typename Q>
 	static auto Select(Iterator begin, Iterator last, std::function<Q(const T&)> functor);
+
+
+	template <typename Q, typename E = typename CustomEnableIf<std::is_class<T>::value, T>::type>
+	static auto Select(Iterator begin, Iterator last, Q E::* field);
+
 };
 
 #define DefineWhere( T, Iterator, begin, last )\
@@ -112,7 +135,13 @@ template<typename Q> \
 auto Select(std::function<Q(const T&)> functor)\
 {\
 	return IEnumerable<T, Iterator, Type::None>::template Select<Q>( begin, last, functor );\
+}\
+template <typename Q, typename E = typename CustomEnableIf<std::is_class<T>::value, T>::type>\
+auto Select(Q E::* field)\
+{\
+	return IEnumerable<T, Iterator, Type::None>::template Select<Q>( begin, last, field );\
 }
+
 
 #define DefineSum( T, Iterator, begin, last )\
 T Sum()\

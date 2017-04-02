@@ -176,6 +176,15 @@ void bench()
 	assertEquals(x1, x2);
 }
 
+struct SomeClass
+{
+	int a, b;
+	SomeClass( int a, int b ) : a(a), b(b)
+	{
+
+	}
+};
+
 int main(int argc, char **argv)
 {
 	std::cout << "# Light objects" << std::endl;
@@ -184,5 +193,12 @@ int main(int argc, char **argv)
 	std::cout << "# Heavy objects" << std::endl;
 	bench<heavy>();
 
+
+	//testing select with field
+	std::vector<SomeClass> someVec {SomeClass(1, 10), SomeClass(2, 20), SomeClass(3, 30)};
+	for( auto i : LINQ(someVec).Select( &SomeClass::a ) )
+			std::cout << i << "\n";
+	for( auto i : LINQ(someVec).Select( &SomeClass::b ) )
+			std::cout << i << "\n";
 	return EXIT_SUCCESS;
 }
