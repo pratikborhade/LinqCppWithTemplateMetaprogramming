@@ -18,8 +18,12 @@ public:
 
 		WhereIterator() = default;
 
-		WhereIterator(Iterator &ite, Iterator &last, Functor &func) : ite(ite), last(last), functor(func)
+		WhereIterator(Iterator &iterator, Iterator &last, Functor &func) : ite(iterator), last(last), functor(func)
 		{
+			while (ite != last && !functor(*ite))
+			{
+				++ite;
+			}
 		}
 
 		WhereIterator(const WhereIterator&) = default;

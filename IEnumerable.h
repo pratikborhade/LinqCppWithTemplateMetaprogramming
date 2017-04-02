@@ -56,7 +56,8 @@ public:
 
 	static auto TakeWhile(Iterator begin, Iterator last, std::function< bool(const T&) > functor);
 
-	static auto SkipWhile(auto begin, std::function< bool(const T&) > functor)
+	template< typename BaseClass >
+	static auto SkipWhile(BaseClass begin, std::function< bool(const T&) > functor)
 	{
 		auto end = begin.end();
 		while (begin != end && functor(*begin))
@@ -64,7 +65,8 @@ public:
 		return begin;
 	}
 
-	static auto Skip(auto begin, const size_t limit)
+	template< typename BaseClass >
+	static auto Skip(BaseClass begin, const size_t limit)
 	{
 		auto end = begin.end();
 		auto l = limit;
@@ -83,6 +85,15 @@ public:
 		for (; begin != last; ++begin)
 			sum += *begin;
 		return sum;
+	}
+
+	template< typename Container = std::vector<T> >
+	static Container ToList(Iterator begin, Iterator last)
+	{
+		Container container;
+		for ( ; begin != last; ++ begin )
+			container.push_back(*begin);
+		return container;
 	}
 
 	template <typename Q>
@@ -147,7 +158,10 @@ auto Select(Q E::* field)\
 T Sum()\
 {\
 	return IEnumerable<T, Iterator, Type::None>::Sum(begin, last);\
-}
+}\
+template <typename ListContainer = std::vector<T>>\
+ListContainer ToList()\
+{ return IEnumerable<T, Iterator, Type::None>::template ToList<ListContainer>(begin, last); }
 
 #include "WhereClause.h"
 #include "LinqConvertor.h"
