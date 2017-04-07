@@ -13,12 +13,12 @@ public:
 	{
 	}
 
-	void operator++()
+	inline void operator++() noexcept
 	{
 		++current;
 	}
 
-	const T operator*()
+	inline const T &operator*() noexcept
 	{
 		return *current;
 	}

@@ -12,13 +12,13 @@ public:
 	{
 		Iterator ite;
 		Iterator last;
-		Functor functor;
+		Functor const functor;
 		
 		typedef typename Iterator::value_type value_type;
 
 		WhereIterator() = default;
 
-		WhereIterator(Iterator &iterator, Iterator &last, Functor &func) : ite(iterator), last(last), functor(func)
+		WhereIterator(Iterator &iterator, Iterator &last, Functor const &func) : ite(iterator), last(last), functor(func)
 		{
 			while (ite != last && !functor(*ite))
 			{
@@ -28,55 +28,56 @@ public:
 
 		WhereIterator(const WhereIterator&) = default;
 
-		WhereIterator& operator=(const WhereIterator&) = default;
+		WhereIterator& operator=(const WhereIterator& other)
+		{
+			ite = other.ite;
+			return *this;
+		}
 
-		void operator++()
+		inline void operator++() noexcept
 		{
 			++ite;
-			while (ite != last && !functor(*ite))
+			for (;ite != last && !functor(*ite); ++ite)
 			{
-				++ite;
 			}
 		}
 
-		const T operator*() const
+		inline const T &operator*() const noexcept
 		{
 			return *ite;
 		}
 
-		bool operator==(const WhereIterator& other) const
+		inline bool operator==(const WhereIterator& other) const noexcept
 		{
 			return ite == other.ite;
 		}
 
-		bool operator!=(const WhereIterator& other) const
+		inline bool operator!=(const WhereIterator& other) const noexcept
 		{
 			return !(ite == other.ite);
 		}
 
 		auto end()
 		{
-			static WhereIterator end(last, last, functor);
+			static WhereIterator end(last, last, {});
 			return end;
 		}
 	};
 private:
 	WhereIterator current;
-	Functor functor;
 public:
 
-	IEnumerable(Iterator &ite, Iterator &last, Functor &func) :
-		functor(func),
+	IEnumerable(Iterator &ite, Iterator &last, Functor const &func) :
 		current(ite, last, func)
 	{
 	}
 
-	void operator++()
+	inline void operator++() noexcept
 	{
 		++current;
 	}
 
-	const T operator*()
+	inline const T &operator*() noexcept
 	{
 		return *current;
 	}
@@ -84,7 +85,7 @@ public:
 
 	const IEnumerable<T, Iterator, Type::Where> end()
 	{
-		return IEnumerable<T, Iterator, Type::Where>(current.last, current.last, functor);
+		return IEnumerable<T, Iterator, Type::Where>(current.last, current.last, {});
 	}
 
 	//common definations
@@ -104,7 +105,7 @@ template<
 	typename T,
 	typename Iterator
 >
-auto IEnumerable<T, Iterator, Type::None>::Where(Iterator begin, Iterator last, std::function<bool(const T&)> func)
+auto IEnumerable<T, Iterator, Type::None>::Where(Iterator begin, Iterator last, std::function<bool(const T&)> const &func)
 {
 	return IEnumerable<T, Iterator, Type::Where>(begin, last, func);
 }

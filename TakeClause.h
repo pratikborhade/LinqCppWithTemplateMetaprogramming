@@ -18,7 +18,7 @@ class IEnumerable<T, Iterator, Type::Take>
 	{
 		Iterator ite;
 		Iterator last;
-		Functor functor;
+		Functor const functor;
 		size_t limit;
 		TakeType type;
 
@@ -27,7 +27,7 @@ class IEnumerable<T, Iterator, Type::Take>
 
 		TakeIterator() = default;
 
-		TakeIterator(Iterator &ite, Iterator &last, Functor &func) : ite(ite), last(last), functor(func), type(TakeType::Function), limit(0)
+		TakeIterator(Iterator &ite, Iterator &last, Functor const &func) : ite(ite), last(last), functor(func), type(TakeType::Function), limit(0)
 		{
 		}
 
@@ -38,9 +38,13 @@ class IEnumerable<T, Iterator, Type::Take>
 
 		TakeIterator(const TakeIterator&) = default;
 
-		TakeIterator& operator=(const TakeIterator&) = default;
+		TakeIterator& operator=(const TakeIterator& other)
+		{
+			ite = other.ite;
+			limit = other.limit;
+		}
 
-		void operator++()
+		inline void operator++() noexcept
 		{
 			++ite;
 			switch (type)
@@ -58,17 +62,17 @@ class IEnumerable<T, Iterator, Type::Take>
 			}
 		}
 
-		const T operator*() const
+		inline const T &operator*() const noexcept
 		{
 			return *ite;
 		}
 
-		bool operator==(const TakeIterator& other) const
+		inline bool operator==(const TakeIterator& other) const noexcept
 		{
 			return ite == other.ite;
 		}
 
-		bool operator!=(const TakeIterator& other) const
+		inline bool operator!=(const TakeIterator& other) const noexcept
 		{
 			return !(ite == other.ite);
 		}
@@ -82,12 +86,10 @@ class IEnumerable<T, Iterator, Type::Take>
 
 private:
 	TakeIterator current;
-	Functor functor;
 	size_t limit;
 public:
 
-	IEnumerable(Iterator &ite, Iterator &last, Functor &func) :
-		functor(func),
+	IEnumerable(Iterator &ite, Iterator &last, Functor const &func) :
 		current(ite, last, func)
 	{
 	}
@@ -98,12 +100,12 @@ public:
 	{
 	}
 
-	void operator++()
+	inline void operator++() noexcept
 	{
 		++current;
 	}
 
-	const T operator*()
+	inline const T &operator*() noexcept
 	{
 		return *current;
 	}
@@ -111,7 +113,7 @@ public:
 
 	auto end()
 	{
-		return IEnumerable<T, Iterator, Type::Take>(current.last, current.last, functor);
+		return IEnumerable<T, Iterator, Type::Take>(current.last, current.last, {});
 	}
 
 	//common definations
@@ -143,7 +145,7 @@ template<
 	typename T,
 	typename Iterator
 >
-auto IEnumerable<T, Iterator, Type::None>::TakeWhile(Iterator begin, Iterator last, std::function<bool(const T&)> func)
+auto IEnumerable<T, Iterator, Type::None>::TakeWhile(Iterator begin, Iterator last, std::function<bool(const T&)> const &func)
 {
 	return IEnumerable<T, Iterator, Type::Take>(begin, last, func);
 }

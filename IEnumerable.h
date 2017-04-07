@@ -50,14 +50,14 @@ template<
 class IEnumerable<T, Iterator, Type::None>
 {
 public:
-	static auto Where(Iterator begin, Iterator last, std::function< bool(const T&) > functor);
+	static auto Where(Iterator begin, Iterator last, std::function< bool(const T&) > const &functor);
 
 	static auto Take( Iterator begin, Iterator last, std::size_t limit);
 
-	static auto TakeWhile(Iterator begin, Iterator last, std::function< bool(const T&) > functor);
+	static auto TakeWhile(Iterator begin, Iterator last, std::function< bool(const T&) > const &functor);
 
 	template< typename BaseClass >
-	static auto SkipWhile(BaseClass begin, std::function< bool(const T&) > functor)
+	static auto SkipWhile(BaseClass begin, std::function< bool(const T&) > const &functor)
 	{
 		auto end = begin.end();
 		while (begin != end && functor(*begin))
@@ -83,7 +83,7 @@ public:
 		T sum = 0;
 
 		for (; begin != last; ++begin)
-			sum += *begin;
+			sum += T(*begin);
 		return sum;
 	}
 
@@ -97,7 +97,7 @@ public:
 	}
 
 	template <typename Q>
-	static auto Select(Iterator begin, Iterator last, std::function<Q(const T&)> functor);
+	static auto Select(Iterator begin, Iterator last, std::function<const Q&(const T&)> const &functor);
 
 
 	template <typename Q, typename E = typename CustomEnableIf<std::is_class<T>::value, T>::type>
@@ -106,7 +106,7 @@ public:
 };
 
 #define DefineWhere( T, Iterator, begin, last )\
-auto Where( std::function< bool(const T&) > functor ) \
+auto Where( std::function< bool(const T&) > const &functor ) \
 { \
 	return IEnumerable<T, Iterator, Type::None>::Where(begin, last, functor);\
 }
@@ -118,7 +118,7 @@ auto Take( size_t limit ) \
 }
 
 #define DefineTakeWhile( T, Iterator, begin, last )\
-auto TakeWhile( std::function< bool(const T&) > functor ) \
+auto TakeWhile( std::function< bool(const T&) > const &functor ) \
 { \
 	return IEnumerable<T, Iterator, Type::None>::TakeWhile(begin, last, functor);\
 }
@@ -128,7 +128,7 @@ auto Skip( size_t limit ) \
 { \
 	return IEnumerable<T, Iterator, Type::None>::Skip(begin, limit);\
 }\
-auto SkipWhile( std::function< bool(const T&) > functor ) \
+auto SkipWhile( std::function< bool(const T&) > const &functor ) \
 { \
 	return IEnumerable<T, Iterator, Type::None>::SkipWhile(begin, functor);\
 }
@@ -138,12 +138,12 @@ auto begin()\
 { return *this; }
 
 #define DefineBasicOperator(T, Iterator, Type)\
-template<typename EqualClass> bool operator==( const EqualClass &other ){ return current == other.current; };\
-template<typename EqualClass> bool operator!=( const EqualClass &other ){ return current != other.current; };
+template<typename EqualClass> bool inline operator==( const EqualClass &other ) const { return current == other.current; };\
+template<typename EqualClass> bool inline operator!=( const EqualClass &other ) const { return current != other.current; };
 
 #define DefineSelect( T, Iterator, begin, last )\
 template<typename Q> \
-auto Select(std::function<Q(const T&)> functor)\
+auto Select(std::function<const Q&(const T&)> const &functor)\
 {\
 	return IEnumerable<T, Iterator, Type::None>::template Select<Q>( begin, last, functor );\
 }\
