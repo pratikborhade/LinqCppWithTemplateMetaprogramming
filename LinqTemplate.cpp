@@ -14,56 +14,7 @@
 #include <iostream>
 #include <chrono>
 #include <queue>
-
-template <typename T1, typename T2>
-void assertEquals(T1 t1, T2 t2)
-{
-	if (!(t1 == t2))
-	{
-		std::stringstream ss;
-		ss << "Assertion failed: ";
-		ss << "Expected:" << t1;
-		ss << ", Got:" << t2;
-		std::cout << ss.str();
-		throw std::runtime_error(ss.str());
-	}
-}
-
-template <typename T, typename F>
-auto time(F f)
-{
-	auto start = std::chrono::steady_clock::now();
-
-	auto result = f();
-
-	auto end = std::chrono::steady_clock::now();
-	auto diff = end - start;
-	return std::make_pair(std::chrono::duration<double, T>(diff).count(), result);
-}
-
-template <typename F>
-auto test(const std::string& name, F f, double showDuration = 0.5, std::ostream& os = std::cout)
-{
-	os << "Running test '" << name << "' ";
-	os.flush();
-
-	try
-	{
-		auto result = time<std::micro>(f);
-		long duration = static_cast<long>(result.first);
-
-
-		os << "[" << duration << " us] ";
-		os << "-> Success" << std::endl;
-		return result.second;
-	}
-	catch (const std::exception& e)
-	{
-		os << "-> Failed !" << std::endl;
-		os << "\t => " << e.what() << std::endl;
-		return decltype(f()){};
-	}
-}
+#include "assert.h"
 
 struct heavy {
 	int map[1024];
@@ -72,6 +23,9 @@ struct heavy {
 		for (auto& x : map)
 			x = (int)(std::rand() * 10.0 / RAND_MAX);
 	}
+
+	heavy(const heavy&) = delete;
+
 };
 
 struct light {
@@ -81,16 +35,17 @@ struct light {
 		for (auto& x : map)
 			x = (int)(std::rand() * 10.0 / RAND_MAX);
 	}
+
+	light(const light&) = delete;
 };
 
 template <typename T>
 void bench()
 {
-	std::vector<T> data(200000);
+	std::vector<T> data(20000000);
 	auto enumerable = LINQ(data);
 	auto x1 = test("take-vector", [&]() {
 		int sum = 0;
-		int i = 0;
 		for (int i = 0; i < 10000; i++) {
 			sum += data[i].map[0];
 		}
@@ -100,7 +55,7 @@ void bench()
 	auto x2 = test("take-enumerable", [&]() {
 		return enumerable
 			.Take(10000)
-			.template Select<int>([](const auto& x) { return x.map[0]; })
+			.Select([](const auto& x) -> const int & { return x.map[0]; })
 			.Sum();
 	});
 
@@ -118,8 +73,8 @@ void bench()
 
 	x2 = test("where-enumerable", [&]() {
 		return enumerable
-			.template Select<int>([](const auto& x) { return x.map[0]; })
-			.Where([](const auto& x) { return x > 5; })
+			.Select([](const auto& x) -> const int & { return x.map[0]; })
+			.Where([](const auto& x) -> bool { return x > 5; })
 			.Sum();
 	});
 
@@ -140,9 +95,9 @@ void bench()
 
 	x2 = test("where-take-enumerable", [&]() {
 		return enumerable
-			.Where([](const auto& x) { return x.map[0] > 5; })
+			.Where([](const auto& x) -> bool { return x.map[0] > 5; })
 			.Take(1)
-			.template Select<int>([](const auto& x) { return x.map[0]; })
+			.Select([](const auto& x) -> const int & { return x.map[0]; })
 			.Sum();
 	});
 
@@ -167,9 +122,9 @@ void bench()
 	
 	x2 = test("skip-while-take-while-enumerable", [&]() {
 		return enumerable
-			.SkipWhile([](const auto& x) { return x.map[0] < 5; })
-			.TakeWhile([](const auto& x) { return x.map[0] >= 5; })
-			.template Select<int>([](const auto& x) { return x.map[0]; })
+			.SkipWhile([](const auto& x) -> bool { return x.map[0] < 5; })
+			.TakeWhile([](const auto& x) -> bool { return x.map[0] >= 5; })
+			.Select([](const auto& x) -> const int & { return x.map[0]; })
 			.Sum();
 	});
 	
@@ -190,20 +145,13 @@ int main(int argc, char **argv)
 	std::cout << "# Light objects" << std::endl;
 	bench<light>();
 
+	/*
 	std::cout << "# Heavy objects" << std::endl;
 	bench<heavy>();
-
-
-	//testing select with field
-	std::vector<SomeClass> someVec {SomeClass(1, 10), SomeClass(2, 20), SomeClass(3, 30)};
-	for( auto i : LINQ(someVec).Select( &SomeClass::a ) )
-			std::cout << i << "\n";
-	for( auto i : LINQ(someVec).Select( &SomeClass::b ) )
-			std::cout << i << "\n";
-
-	auto listb = LINQ(someVec).Select( &SomeClass::b ).ToList();
-	for (auto i : listb)
-		std::cout << i;
-
+	//testing select with field	std::vector<SomeClass> someVec{ SomeClass(1, 10), SomeClass(2, 20), SomeClass(3, 30) };
+	for (auto i : LINQ(someVec).Select(&SomeClass::a))
+		std::cout << i << "\n";
+	for (auto i : LINQ(someVec).Select(&SomeClass::b))		std::cout << i << "\n";	auto listb = LINQ(someVec).Select(&SomeClass::b).ToList();	for (auto i : listb)		std::cout << i;
+		*/
 	return EXIT_SUCCESS;
 }
