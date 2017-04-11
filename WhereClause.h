@@ -2,18 +2,18 @@
 
 template<
 	typename T,
-	typename Iterator
+	typename Iterator,
+	typename Functor
 >
-class IEnumerable<T, Iterator, Type::Where>
+class IEnumerable<T, Iterator, Type::Where, Functor>
 {
-	using Functor = std::function<bool(const T&)>;
-public:
+private:
 	struct WhereIterator
 	{
 		Iterator ite;
 		Iterator last;
 		Functor const functor;
-		
+	public:
 		typedef typename Iterator::value_type value_type;
 
 		WhereIterator() = default;
@@ -59,7 +59,7 @@ public:
 
 		auto end()
 		{
-			static WhereIterator end(last, last, {});
+			static WhereIterator end(last, last, functor);
 			return end;
 		}
 	};
@@ -105,8 +105,9 @@ template<
 	typename T,
 	typename Iterator
 >
-auto IEnumerable<T, Iterator, Type::None>::Where(Iterator begin, Iterator last, std::function<bool(const T&)> const &func)
+template <typename Functor>
+auto IEnumerable<T, Iterator, Type::None>::Where(Iterator begin, Iterator last, Functor const &func)
 {
-	return IEnumerable<T, Iterator, Type::Where>(begin, last, func);
+	return IEnumerable<T, Iterator, Type::Where, Functor>(begin, last, func);
 }
 

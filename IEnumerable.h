@@ -37,7 +37,8 @@ struct CustomEnableIf<false, T>
 template<
 	typename T,
 	typename Iterator,
-	Type type
+	Type type,
+	typename AnotherType = NullType
 >
 class IEnumerable
 {
@@ -50,7 +51,8 @@ template<
 class IEnumerable<T, Iterator, Type::None>
 {
 public:
-	static auto Where(Iterator begin, Iterator last, std::function< bool(const T&) > const &functor);
+	template <typename Functor>
+	static auto Where(Iterator begin, Iterator last, Functor const &functor);
 
 	static auto Take( Iterator begin, Iterator last, std::size_t limit);
 
@@ -78,16 +80,17 @@ public:
 		return begin;
 	}
 
-	static T Sum(Iterator begin, Iterator last)
+	template < typename BaseType = std::remove_cv< std::remove_reference<T>::type >::type >
+	static BaseType Sum(Iterator begin, Iterator last)
 	{
-		T sum = 0;
+		BaseType sum = 0;
 
 		for (; begin != last; ++begin)
-			sum += T(*begin);
+			sum = sum + *begin;
 		return sum;
 	}
 
-	template< typename Container = std::vector<T> >
+	template<typename BaseType = std::remove_cv< std::remove_reference<T>::type >::type, typename Container = std::vector<BaseType> >
 	static Container ToList(Iterator begin, Iterator last)
 	{
 		Container container;
@@ -96,8 +99,8 @@ public:
 		return container;
 	}
 
-	template <typename Q>
-	static auto Select(Iterator begin, Iterator last, std::function<const Q&(const T&)> const &functor);
+	template <typename Functor>
+	static auto Select(Iterator begin, Iterator last, Functor const &functor);
 
 
 	template <typename Q, typename E = typename CustomEnableIf<std::is_class<T>::value, T>::type>
@@ -106,9 +109,10 @@ public:
 };
 
 #define DefineWhere( T, Iterator, begin, last )\
-auto Where( std::function< bool(const T&) > const &functor ) \
+template< typename Functor >\
+auto Where( Functor const &functor ) \
 { \
-	return IEnumerable<T, Iterator, Type::None>::Where(begin, last, functor);\
+	return IEnumerable<T, Iterator, Type::None>::template Where<Functor>(begin, last, functor);\
 }
 
 #define DefineTake( T, Iterator, begin, last )\
@@ -142,20 +146,21 @@ template<typename EqualClass> bool inline operator==( const EqualClass &other ) 
 template<typename EqualClass> bool inline operator!=( const EqualClass &other ) const { return current != other.current; };
 
 #define DefineSelect( T, Iterator, begin, last )\
-template<typename Q> \
-auto Select(std::function<const Q&(const T&)> const &functor)\
+template<typename Functor> \
+auto Select(Functor const &functor)\
 {\
-	return IEnumerable<T, Iterator, Type::None>::template Select<Q>( begin, last, functor );\
+	return IEnumerable<T, Iterator, Type::None>::template Select<Functor>( begin, last, functor );\
 }\
 template <typename Q, typename E = typename CustomEnableIf<std::is_class<T>::value, T>::type>\
 auto Select(Q E::* field)\
 {\
-	return IEnumerable<T, Iterator, Type::None>::template Select<Q>( begin, last, field );\
+	return IEnumerable<T, Iterator, Type::None>::template Select<Functor>( begin, last, field );\
 }
 
 
 #define DefineSum( T, Iterator, begin, last )\
-T Sum()\
+template <typename BaseType = std::remove_cv< std::remove_reference<T>::type >::type>\
+BaseType Sum()\
 {\
 	return IEnumerable<T, Iterator, Type::None>::Sum(begin, last);\
 }\

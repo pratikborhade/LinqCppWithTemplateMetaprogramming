@@ -2,11 +2,11 @@
 
 template<
 	typename T,
-	typename Iterator
+	typename Iterator,
+	typename Functor
 >
-class IEnumerable<T, Iterator, Type::Select>
+class IEnumerable<T, Iterator, Type::Select, Functor>
 {
-	using Functor = std::function<const T&(const typename Iterator::value_type &)>;
 public:
 	struct SelectIterator
 	{
@@ -96,10 +96,11 @@ template<
 	typename T,
 	typename Iterator
 >
-template<typename Q>
-auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, std::function<const Q&(const T&)> const & func)
+template<typename Functor>
+auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, Functor const & func)
 {
-	return IEnumerable<Q, Iterator, Type::Select>(begin, last, func);
+	
+	return IEnumerable<std::result_of<Functor(T)>::type, Iterator, Type::Select, Functor>(begin, last, func);
 }
 
 
