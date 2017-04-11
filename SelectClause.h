@@ -2,45 +2,48 @@
 
 template<
 	typename T,
-	typename Iterator
+	typename Iterator,
+	typename Functor
 >
-class IEnumerable<T, Iterator, Type::Select>
+class IEnumerable<T, Iterator, Type::Select, Functor>
 {
-	using Functor = std::function<T(const typename Iterator::value_type&)>;
 public:
 	struct SelectIterator
 	{
 		Iterator ite;
 		Iterator last;
-		Functor functor;
+		Functor const functor;
 		typedef typename Iterator::value_type value_type;
 
 		SelectIterator() = default;
 
-		SelectIterator(Iterator &ite, Iterator &last, Functor func) : ite(ite), last(last), functor(func)
+		SelectIterator(Iterator &ite, Iterator &last, Functor const &func) : ite(ite), last(last), functor(func)
 		{
 		}
 
 		SelectIterator(const SelectIterator&) = default;
 
-		SelectIterator& operator=(const SelectIterator&) = default;
+		SelectIterator& operator=(const SelectIterator& other)
+		{
+			ite = other.ite;
+		}
 
-		void operator++()
+		inline void operator++() noexcept
 		{
 			++ite;
 		}
 
-		const T operator*() const
+		inline const T &operator*() const noexcept
 		{
 			return functor(*ite);
 		}
 
-		bool operator==(const SelectIterator& other) const
+		inline bool operator==(const SelectIterator& other) const noexcept
 		{
 			return ite == other.ite;
 		}
 
-		bool operator!=(const SelectIterator& other) const
+		inline bool operator!=(const SelectIterator& other) const noexcept
 		{
 			return !(ite == other.ite);
 		}
@@ -53,29 +56,27 @@ public:
 	};
 private:
 	SelectIterator current;
-	Functor functor;
 public:
 
-	IEnumerable(Iterator &ite, Iterator &last, Functor func) :
-		functor(func),
+	IEnumerable(Iterator &ite, Iterator &last, Functor const & func) :
 		current(ite, last, func)
 	{
 	}
 
-	void operator++()
+	inline void operator++() noexcept
 	{
 		++current;
 	}
 
-	const T operator*()
+	inline const T &operator*() noexcept
 	{
 		return *current;
 	}
 
 
-	const IEnumerable<T, Iterator, Type::Select> end()
+	const IEnumerable<T, Iterator, Type::Select> end() noexcept
 	{
-		return IEnumerable<T, Iterator, Type::Select>(current.last, current.last, functor);
+		return IEnumerable<T, Iterator, Type::Select>(current.last, current.last, {});
 	}
 
 	//common definations
@@ -95,10 +96,11 @@ template<
 	typename T,
 	typename Iterator
 >
-template<typename Q>
-auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, std::function<Q(const T&)> func)
+template<typename Functor>
+auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, Functor const & func)
 {
-	return IEnumerable<Q, Iterator, Type::Select>(begin, last, func);
+	
+	return IEnumerable<std::result_of<Functor(T)>::type, Iterator, Type::Select, Functor>(begin, last, func);
 }
 
 
@@ -110,7 +112,7 @@ template <typename Q, typename E>
 auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, Q E::* field)
 {
 	return IEnumerable<Q, Iterator, Type::Select>(begin, last, 
-		[field](const E& val)->Q 
+		[field](const E& val)-> const Q & 
 		{
 			return val.*field;
 		});
