@@ -128,7 +128,9 @@ public:
 	DefineSkipMethods(T, TakeIterator, *this);
 
 	DefineSelect(T, TakeIterator, current, current.end());
-	DefineSum(T, TakeIterator, current, current.end())
+	DefineSum(T, TakeIterator, current, current.end());
+
+	DefineOrderBy(T, Iterator, Type::Take, NullType);
 };
 
 

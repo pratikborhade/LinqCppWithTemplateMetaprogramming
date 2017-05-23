@@ -8,6 +8,7 @@ template<
 class IEnumerable<T, Iterator, Type::Where, Functor>
 {
 private:
+
 	struct WhereIterator
 	{
 		Iterator ite;
@@ -42,7 +43,7 @@ private:
 			}
 		}
 
-		inline const T &operator*() const noexcept
+		inline decltype(auto) operator*() const noexcept
 		{
 			return *ite;
 		}
@@ -77,7 +78,7 @@ public:
 		++current;
 	}
 
-	inline const T &operator*() noexcept
+	inline decltype(auto) operator*() noexcept
 	{
 		return *current;
 	}
@@ -98,7 +99,9 @@ public:
 	DefineSkipMethods(T, WhereIterator, *this);
 
 	DefineSelect(T, WhereIterator, current, current.end());
-	DefineSum(T, WhereIterator, current, current.end())
+	DefineSum(T, WhereIterator, current, current.end());
+
+	DefineOrderBy( T, Iterator, Type::Where, Functor  );
 };
 
 template<

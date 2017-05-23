@@ -33,7 +33,7 @@ public:
 			++ite;
 		}
 
-		inline const T &operator*() const noexcept
+		inline decltype(auto) operator*() const noexcept
 		{
 			return functor(*ite);
 		}
@@ -68,7 +68,7 @@ public:
 		++current;
 	}
 
-	inline const T &operator*() noexcept
+	inline decltype(auto) operator*() noexcept
 	{
 		return *current;
 	}
@@ -89,18 +89,23 @@ public:
 	DefineSkipMethods(T, SelectIterator, *this);
 
 	DefineSelect(T, SelectIterator, current, current.end());
-	DefineSum(T, SelectIterator, current, current.end())
+	DefineSum(T, SelectIterator, current, current.end());
+
+	DefineOrderBy(T, Iterator, Type::Select, Functor);
 };
 
 template<
 	typename T,
 	typename Iterator
 >
-template<typename Functor>
-auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, Functor const & func)
+template<typename Func>
+auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, Func const & func)
 {
-	
-	return IEnumerable<std::result_of<Functor(T)>::type, Iterator, Type::Select, Functor>(begin, last, func);
+	return IEnumerable<
+		typename std::remove_cv< typename std::remove_reference<typename std::result_of< Func(T)>::type>::type >::type,
+		Iterator,
+		Type::Select, 
+		Func>(begin, last, func);
 }
 
 
@@ -111,10 +116,10 @@ template<
 template <typename Q, typename E>
 auto IEnumerable<T, Iterator, Type::None>::Select(Iterator begin, Iterator last, Q E::* field)
 {
-	return IEnumerable<Q, Iterator, Type::Select>(begin, last, 
-		[field](const E& val)-> const Q & 
+	auto lambda = [field](const E& val)-> const Q & 
 		{
 			return val.*field;
-		});
+		};
+	return IEnumerable<Q, Iterator, Type::Select, decltype(lambda)>(begin, last, lambda);
 }
 

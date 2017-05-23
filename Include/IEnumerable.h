@@ -2,7 +2,8 @@
 
 #include <functional>
 #include <type_traits>
-
+#include <vector>
+#include <algorithm>
 enum Type
 {
 	None,
@@ -10,7 +11,8 @@ enum Type
 	Where,
 	Take,
 	Skip,
-	Select
+	Select,
+	ClonedContainer
 };
 
 struct NullType
@@ -38,10 +40,16 @@ template<
 	typename T,
 	typename Iterator,
 	Type type,
-	typename AnotherType = NullType
+	typename Functor = NullType
 >
 class IEnumerable
 {
+};
+
+enum OrderByType
+{
+	asc,
+	desc
 };
 
 template<
@@ -80,17 +88,15 @@ public:
 		return begin;
 	}
 
-	template < typename BaseType = std::remove_cv< std::remove_reference<T>::type >::type >
+	template < typename BaseType = typename std::remove_cv< typename std::remove_reference<T>::type >::type >
 	static BaseType Sum(Iterator begin, Iterator last)
 	{
-		BaseType sum = 0;
-
-		for (; begin != last; ++begin)
-			sum = sum + *begin;
-		return sum;
+		BaseType sum = *begin;
+		++begin;
+		return std::accumulate( begin, last, sum );
 	}
 
-	template<typename BaseType = std::remove_cv< std::remove_reference<T>::type >::type, typename Container = std::vector<BaseType> >
+	template<typename BaseType = typename std::remove_cv< typename std::remove_reference<T>::type >::type, typename Container = std::vector<BaseType> >
 	static Container ToList(Iterator begin, Iterator last)
 	{
 		Container container;
@@ -106,13 +112,15 @@ public:
 	template <typename Q, typename E = typename CustomEnableIf<std::is_class<T>::value, T>::type>
 	static auto Select(Iterator begin, Iterator last, Q E::* field);
 
+	template <Type type, typename  anotherType1, typename ... Args >
+	static auto OrderBy(IEnumerable<T, Iterator, type, anotherType1> &container,Args &&... args );
 };
 
 #define DefineWhere( T, Iterator, begin, last )\
-template< typename Functor >\
-auto Where( Functor const &functor ) \
+template< typename Func >\
+auto Where( Func const &functor ) \
 { \
-	return IEnumerable<T, Iterator, Type::None>::template Where<Functor>(begin, last, functor);\
+	return IEnumerable<T, Iterator, Type::None>::template Where<Func>(begin, last, functor);\
 }
 
 #define DefineTake( T, Iterator, begin, last )\
@@ -146,29 +154,36 @@ template<typename EqualClass> bool inline operator==( const EqualClass &other ) 
 template<typename EqualClass> bool inline operator!=( const EqualClass &other ) const { return current != other.current; };
 
 #define DefineSelect( T, Iterator, begin, last )\
-template<typename Functor> \
-auto Select(Functor const &functor)\
+template<typename Func> \
+auto Select(Func const &functor)\
 {\
-	return IEnumerable<T, Iterator, Type::None>::template Select<Functor>( begin, last, functor );\
+	return IEnumerable<T, Iterator, Type::None>::template Select<Func>( begin, last, functor );\
 }\
 template <typename Q, typename E = typename CustomEnableIf<std::is_class<T>::value, T>::type>\
 auto Select(Q E::* field)\
 {\
-	return IEnumerable<T, Iterator, Type::None>::template Select<Functor>( begin, last, field );\
+	return IEnumerable<T, Iterator, Type::None>::template Select( begin, last, field );\
+}
+
+#define DefineOrderBy( T, Iterator, type, AnotherType )\
+template< typename ... Args >\
+auto OrderBy(Args &&... args)\
+{\
+	return IEnumerable< T, Iterator, Type::None >::template OrderBy<type, AnotherType, Args ...>(*this, std::forward<Args>(args) ...);\
 }
 
 
 #define DefineSum( T, Iterator, begin, last )\
-template <typename BaseType = std::remove_cv< std::remove_reference<T>::type >::type>\
+template <typename BaseType = typename std::remove_cv< typename std::remove_reference<T>::type >::type>\
 BaseType Sum()\
 {\
 	return IEnumerable<T, Iterator, Type::None>::Sum(begin, last);\
 }\
-template <typename ListContainer = std::vector<T>>\
-ListContainer ToList()\
-{ return IEnumerable<T, Iterator, Type::None>::template ToList<ListContainer>(begin, last); }
+auto ToList()\
+{ return IEnumerable<T, Iterator, Type::None>::ToList(begin, last); }
 
 #include "WhereClause.h"
 #include "LinqConvertor.h"
 #include "TakeClause.h"
 #include "SelectClause.h"
+#include "OrderByClause.h"

@@ -40,7 +40,7 @@ auto test(const std::string& name, F f, std::ostream& os = std::cout)
 	//try
 	//{
 	auto result = time<std::micro>(f);
-	long long duration = result.first;
+	double duration = result.first;
 
 	os << "[" << duration << " us] ";
 	os << "-> Success" << std::endl;
