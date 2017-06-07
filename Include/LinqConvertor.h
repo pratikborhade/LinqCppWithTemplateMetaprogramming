@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 
 template<
 	typename T,
@@ -41,7 +42,7 @@ public:
 	DefineSelect(T, Iterator, current, last);
 	DefineSum(T, Iterator, current, last);
 
-	DefineOrderBy(T, Iterator, Type::ClonedContainer, NullType);
+	DefineOrderBy(T, Iterator, Type::Container, NullType);
 };
 
 
@@ -51,39 +52,50 @@ template<
 >
 class IEnumerable<T, Iterator, Type::ClonedContainer>
 {
-	typename std::vector<T>::const_iterator current;
-	typename std::vector<T>::const_iterator last;
-	std::vector<T> *copiedContainer;
+	using Container = std::vector<T>;
+	typename Container::const_iterator current;
+	typename Container::const_iterator last;
+	std::shared_ptr<Container> copiedContainer;
+	
+	IEnumerable<T, Iterator, Type::ClonedContainer>(
+		const std::shared_ptr<Container> &copiedContainer,
+		typename Container::const_iterator &current,
+		typename Container::const_iterator &last ):copiedContainer(copiedContainer), last(last), current(current)
+	{
+	}
+	
 public:
 
-
-	IEnumerable<T, Iterator, Type::ClonedContainer>(const IEnumerable<T, Iterator, Type::ClonedContainer>& other) : copiedContainer(other.copiedContainer),
+	IEnumerable<T, Iterator, Type::ClonedContainer>(const IEnumerable<T, Iterator, Type::ClonedContainer>& other):
+		copiedContainer(other.copiedContainer),
 		current(other.current),
 		last(other.last)
 	{
 	}
-
+	
 	IEnumerable<T, Iterator, Type::ClonedContainer>& operator=(const IEnumerable<T, Iterator, Type::ClonedContainer>& other )
 	{
-		copiedContainer = new std::vector<T>( *other.copiedContainer );
-		current = copiedContainer->begin() + (other.current - other.copiedContainer->begin());
-		last = copiedContainer->end();
+		copiedContainer = other.copiedContainer;
+		current = other.current;
+		last = other.last;
 	}
 
-	IEnumerable(Iterator ite, Iterator last)
+	IEnumerable(Iterator ite, Iterator lastIte):
+		copiedContainer(new Container())
 	{
-		copiedContainer = new std::vector<T>();
-		for (; ite != last; ++ite)
+		for (; ite != lastIte; ++ite)
 			copiedContainer->push_back( *ite );
 		current = copiedContainer->begin();
-		this->last = copiedContainer->end();
+		last = copiedContainer->end();
 	}
-
-	~IEnumerable<T, Iterator, Type::ClonedContainer>()
+	
+	IEnumerable<T, Iterator, Type::ClonedContainer>(Container&& vec):
+		copiedContainer(new Container( vec ))
 	{
-		delete copiedContainer;
+		current = copiedContainer->begin();
+		last = copiedContainer->end();
 	}
-
+	
 	inline void operator++() noexcept
 	{
 		++current;
@@ -94,13 +106,17 @@ public:
 		return *current;
 	}
 
-	const IEnumerable<T, Iterator, Type::ClonedContainer> end()
+	decltype(auto) end()
 	{
-		return IEnumerable<T, Iterator, Type::ClonedContainer>(last, last);
+		return IEnumerable<T, Iterator, Type::ClonedContainer>(copiedContainer, last, last);
 	}
-
+	
+	decltype(auto) begin()
+	{
+		return *this;
+	}
+	
 	//common definations
-	DefineBegin();
 	DefineWhere(T, Iterator, current, last);
 	DefineBasicOperator(T, Iterator, Type::ClonedContainer);
 
@@ -127,4 +143,10 @@ template <typename Container, typename T = typename std::iterator_traits<typenam
 auto LINQCOPY(const Container &container)
 {
 	return  IEnumerable<T, typename Container::const_iterator, Type::ClonedContainer>(container.begin(), container.end());
+}
+
+template <typename Container, typename T = typename std::iterator_traits<typename Container::iterator>::value_type>
+auto LINQCOPY(Container &&container)
+{
+	return  IEnumerable<T, typename Container::const_iterator, Type::ClonedContainer>(container);
 }

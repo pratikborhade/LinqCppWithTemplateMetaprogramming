@@ -10,17 +10,17 @@ struct TestData {
 
 	TestData() {
 		f1 = (int)(std::rand() * 100.0 / RAND_MAX);
-		f2 = (float)(std::rand()/ std::rand());
+		f2 = (float)(std::rand())/ float(std::rand());
 	}
 };
 
-template <typename T = TestData>
+template <typename T = TestData, std::size_t size = 200000>
 class Creator
 {
 	std::vector<TestData> vec;
 	Creator()
 	{
-		vec.resize(2000000);
+		vec.resize(size);
 	}
 	
 	Creator( const Creator& ) = delete;

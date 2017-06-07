@@ -112,11 +112,12 @@ public:
 	template <typename Q, typename E = typename CustomEnableIf<std::is_class<T>::value, T>::type>
 	static auto Select(Iterator begin, Iterator last, Q E::* field);
 
-	template <Type type, typename  anotherType1, typename ... Args >
-	static auto OrderBy(IEnumerable<T, Iterator, type, anotherType1> &container,Args &&... args );
+	template < typename Container, typename ... Args >
+	static auto OrderBy(Container &container,Args &&... args );
 };
 
 #define DefineWhere( T, Iterator, begin, last )\
+typedef T type;\
 template< typename Func >\
 auto Where( Func const &functor ) \
 { \
@@ -146,7 +147,7 @@ auto SkipWhile( std::function< bool(const T&) > const &functor ) \
 }
 
 #define DefineBegin()\
-auto begin()\
+decltype(auto) begin()\
 { return *this; }
 
 #define DefineBasicOperator(T, Iterator, Type)\
@@ -167,9 +168,9 @@ auto Select(Q E::* field)\
 
 #define DefineOrderBy( T, Iterator, type, AnotherType )\
 template< typename ... Args >\
-auto OrderBy(Args &&... args)\
+decltype(auto) OrderBy(Args &&... args)\
 {\
-	return IEnumerable< T, Iterator, Type::None >::template OrderBy<type, AnotherType, Args ...>(*this, std::forward<Args>(args) ...);\
+	return IEnumerable< T, Iterator, Type::None >::template OrderBy(*this, std::forward<Args>(args) ...);\
 }
 
 
